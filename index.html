@@ -304,6 +304,7 @@ async function send(){
   msgs.push({r:'user',t:txt});msgs.push({r:'typing'});
   render();scrollEnd();loading=true;
   const parsed=parseTx(txt);
+  const isTx=parsed&&/gastei|paguei|comprei|recebi|ganhei|entrou|saiu/i.test(txt);
   try{
     const{bal}=totals();
     const recent=data.transactions.slice(-5).map(t=>`${t.type==='income'?'+':'-'}R$${t.amount} (${t.category}): ${t.description}`).join('\n');
@@ -311,8 +312,16 @@ async function send(){
     const d=await res.json();
     const reply=d.content?.[0]?.text||'Não entendi, tenta de novo! 😅';
     msgs=msgs.filter(m=>m.r!=='typing');msgs.push({r:'bot',t:reply});
-    if(parsed&&/gastei|paguei|comprei|recebi|ganhei|entrou|saiu/i.test(txt))pending=parsed;
-  }catch(e){msgs=msgs.filter(m=>m.r!=='typing');msgs.push({r:'bot',t:'Probleminha técnico 😅 Tenta de novo!'});}
+    if(isTx)pending=parsed;
+  }catch(e){
+    msgs=msgs.filter(m=>m.r!=='typing');
+    if(isTx){
+      data.transactions.push(parsed);save();updateHeader();
+      msgs.push({r:'bot',t:`✅ Registrado! ${parsed.type==='income'?'+':'-'}${fmt(parsed.amount)} em ${parsed.category}.`});
+    } else {
+      msgs.push({r:'bot',t:'Não entendi bem, tenta descrever com um valor. Ex: "Gastei R$50 no mercado" 😊'});
+    }
+  }
   loading=false;render();scrollEnd();
 }
 
