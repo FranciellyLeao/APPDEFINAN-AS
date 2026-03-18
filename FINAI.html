@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F0F0F;--surface:#1A1A1A;--border:#2A2A2A;--text:#F0F0F0;--sub:#666;
+  --green:#4ADE80;--red:#F87171;--accent:#F87171;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;overflow:hidden}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.app{display:flex;flex-direction:column;height:100vh;max-width:420px;margin:0 auto}
+
+.header{padding:24px 20px 16px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:18px;font-weight:700;letter-spacing:-.5px}
+.logo em{color:var(--accent);font-style:normal}
+.month{font-size:11px;color:var(--sub)}
+
+.balance-wrap{padding:0 20px 18px}
+.balance-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+.bal-label{font-size:10px;color:var(--sub);letter-spacing:1.5px;font-weight:500;margin-bottom:8px}
+.bal-amount{font-size:30px;font-weight:700;letter-spacing:-1px}
+.bal-row{display:flex;margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.bal-half{flex:1}
+.bal-half:first-child{border-right:1px solid var(--border);padding-right:16px}
+.bal-half:last-child{padding-left:16px}
+.bh-lbl{font-size:10px;color:var(--sub);letter-spacing:1px;font-weight:500;margin-bottom:4px}
+.bh-val{font-size:14px;font-weight:600}
+
+.nav{padding:0 20px 14px}
+.nav-inner{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:3px}
+.nav-btn{flex:1;padding:8px 4px;border-radius:9px;border:none;background:none;color:var(--sub);font-family:'Poppins',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s}
+.nav-btn.active{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+
+.content{flex:1;overflow-y:auto;padding:0 20px}
+.sec-lbl{font-size:10px;font-weight:600;color:var(--sub);letter-spacing:1.5px;margin-bottom:12px}
+
+.empty{text-align:center;padding:40px 20px;color:var(--sub)}
+.empty-icon{font-size:32px;margin-bottom:10px;opacity:.35}
+.empty-text{font-size:12px;line-height:1.7}
+
+.cat-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.cat-item:last-child{border-bottom:none}
+.cat-icon{font-size:17px;width:30px;text-align:center}
+.cat-name{font-size:13px;font-weight:500;flex:1;text-transform:capitalize}
+.cat-val{font-size:13px;font-weight:600;color:var(--red)}
+.cat-pct{font-size:11px;color:var(--sub);margin-left:6px;min-width:28px;text-align:right}
+
+.tx-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.tx-item:last-child{border-bottom:none}
+.tx-item:hover .tx-del{opacity:1}
+.tx-ico{font-size:17px;width:34px;height:34px;background:var(--surface);border:1px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tx-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tx-amount{font-size:13px;font-weight:600}
+.tx-del{opacity:0;transition:opacity .15s;background:none;border:none;color:var(--sub);cursor:pointer;font-size:15px;padding:2px 5px}
+.tx-desc{font-size:13px;font-weight:500}
+.tx-meta{font-size:11px;color:var(--sub);margin-top:2px;text-transform:capitalize}
+
+.chat-list{display:flex;flex-direction:column;gap:10px;padding-bottom:90px}
+.msg{display:flex;gap:9px}
+.msg.user{justify-content:flex-end}
+.msg-bubble{max-width:78%;padding:10px 14px;font-size:13px;line-height:1.6;border-radius:16px;font-weight:400}
+.msg.user .msg-bubble{background:var(--accent);color:#fff;border-radius:16px 16px 4px 16px}
+.msg.bot .msg-bubble{background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 16px 4px}
+.msg-av{width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+.typing{display:flex;gap:4px;padding:8px 2px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--sub);animation:pulse 1s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+
+.confirm-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.confirm-lbl{font-size:10px;color:var(--sub);letter-spacing:1px;font-weight:600;margin-bottom:12px}
+.confirm-body{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.confirm-amount{font-size:18px;font-weight:700}
+.confirm-cat{font-size:11px;color:var(--sub);text-transform:capitalize;margin-top:2px}
+.btn-row{display:flex;gap:8px}
+.cbtn{flex:1;padding:9px;border-radius:10px;border:none;font-family:'Poppins',sans-serif;font-weight:600;font-size:12px;cursor:pointer}
+.cbtn-ok{background:var(--green);color:#000}
+.cbtn-no{background:var(--border);color:var(--sub)}
+
+.input-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;padding:10px 20px 24px;background:linear-gradient(to top,var(--bg) 65%,transparent)}
+.input-inner{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:8px 8px 8px 14px}
+.input-inner input{flex:1;background:none;border:none;color:var(--text);font-size:13px;font-family:'Poppins',sans-serif;outline:none}
+.input-inner input::placeholder{color:var(--sub)}
+.send{width:34px;height:34px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.35;transition:opacity .2s}
+.send.on{opacity:1}
+
+.goal-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px}
+.goal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.goal-info{display:flex;align-items:center;gap:10px}
+.goal-ico{font-size:20px}
+.goal-name{font-size:13px;font-weight:600}
+.goal-rem{font-size:11px;color:var(--sub);margin-top:2px}
+.goal-pct{font-size:12px;font-weight:700}
+.goal-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.goal-fill{height:100%;border-radius:2px;transition:width 1s}
+.goal-nums{display:flex;justify-content:space-between;font-size:11px}
+.goal-del{background:none;border:none;color:var(--sub);cursor:pointer;font-size:14px;padding:2px 5px}
+
+.add-btn{width:100%;padding:13px;border-radius:12px;border:1px dashed var(--border);background:none;color:var(--sub);font-family:'Poppins',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;margin-bottom:80px}
+.add-btn:hover{border-color:var(--sub);color:var(--text)}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:420px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-size:15px;font-weight:600}
+.close-btn{background:var(--border);border:none;color:var(--text);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.field{margin-bottom:12px}
+.field label{font-size:10px;color:var(--sub);font-weight:500;letter-spacing:.5px;display:block;margin-bottom:5px}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;outline:none}
+.field select option{background:var(--surface)}
+.type-toggle{display:flex;gap:6px;margin-bottom:14px}
+.type-btn{flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--sub);font-family:'Poppins',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.type-btn.on-exp{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
+.type-btn.on-inc{border-color:var(--green);background:rgba(74,222,128,.1);color:var(--green)}
+.emo-row{display:flex;flex-wrap:wrap;gap:7px}
+.emo{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.emo.on{border-color:var(--accent);background:rgba(248,113,113,.12)}
+.submit{width:100%;padding:13px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;cursor:pointer;margin-top:6px}
+
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">fin<em>ai</em></div>
+    <div class="month" id="month-lbl"></div>
+  </div>
+  <div class="balance-wrap">
+    <div class="balance-card">
+      <div class="bal-label">SALDO ATUAL</div>
+      <div class="bal-amount" id="bal-disp">R$ 0,00</div>
+      <div class="bal-row">
+        <div class="bal-half"><div class="bh-lbl">ENTRADAS</div><div class="bh-val" id="inc-disp" style="color:var(--green)">R$ 0,00</div></div>
+        <div class="bal-half"><div class="bh-lbl">SAÍDAS</div><div class="bh-val" id="exp-disp" style="color:var(--red)">R$ 0,00</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-inner">
+      <button class="nav-btn active" id="tab-db" onclick="go('dashboard')">Dashboard</button>
+      <button class="nav-btn" id="tab-ch" onclick="go('chat')">IA Chat</button>
+      <button class="nav-btn" id="tab-mt" onclick="go('metas')">Metas</button>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+  <div class="input-bar" id="input-bar" style="display:none">
+    <div class="input-inner">
+      <input id="chat-in" placeholder='"Gastei R$45 no almoço"' onkeydown="if(event.key==='Enter')send()" oninput="toggleSend(this.value)">
+      <button class="send" id="send-btn" onclick="send()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal transação -->
+<div class="overlay" id="tx-modal" style="display:none" onclick="if(event.target===this)closeTx()">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Nova Transação</div><button class="close-btn" onclick="closeTx()">×</button></div>
+    <div class="type-toggle">
+      <button class="type-btn on-exp" id="type-exp" onclick="setType('expense')">— Gasto</button>
+      <button class="type-btn" id="type-inc" onclick="setType('income')">+ Ganho</button>
+    </div>
+    <div class="field"><label>DESCRIÇÃO</label><input id="tx-desc" placeholder="Ex: Supermercado, Salário..."></div>
+    <div class="field"><label>VALOR (R$)</label><input id="tx-amt" type="number" placeholder="0"></div>
+    <div class="field"><label>CATEGORIA</label>
+      <select id="tx-cat">
+        <option value="alimentação">🍔 Alimentação</option><option value="transporte">🚗 Transporte</option>
+        <option value="lazer">🎮 Lazer</option><option value="saúde">💊 Saúde</option>
+        <option value="moradia">🏠 Moradia</option><option value="educação">📚 Educação</option>
+        <option value="salário">💼 Salário</option><option value="freelance">💻 Freelance</option>
+        <option value="investimento">📈 Investimento</option><option value="outros">✨ Outros</option>
+      </select>
+    </div>
+    <button class="submit" onclick="saveTx()">Salvar</button>
+  </div>
+</div>
+
+<!-- Modal meta -->
+<div class="overlay" id="goal-modal" style="display:none" onclick="if(event.target===this)closeGoal()">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Nova Meta</div><button class="close-btn" onclick="closeGoal()">×</button></div>
+    <div class="field"><label>NOME</label><input id="g-name" placeholder="Ex: Viagem Europa"></div>
+    <div class="field"><label>VALOR ALVO (R$)</label><input id="g-target" type="number" placeholder="10000"></div>
+    <div class="field"><label>JÁ GUARDEI (R$)</label><input id="g-cur" type="number" placeholder="0"></div>
+    <div class="field"><label>ÍCONE</label><div class="emo-row" id="emo-grid"></div></div>
+    <button class="submit" onclick="saveGoal()">Criar Meta</button>
+  </div>
+</div>
+
+<script>
+const KEY='finai_v2';
+const EMOJIS=['✈️','🛡️','💻','🏠','🚗','📱','🎓','💰','🏖️','🎸','🌍','🐶','🎮','💍','🏋️'];
+const CATS={alimentação:'🍔',transporte:'🚗',lazer:'🎮',saúde:'💊',moradia:'🏠',educação:'📚',salário:'💼',freelance:'💻',investimento:'📈',outros:'✨'};
+const COLORS=['#4ADE80','#60A5FA','#F472B6','#FB923C','#A78BFA','#34D399','#FBBF24'];
+
+let data=load(),tab='dashboard',msgs=[{r:'bot',t:'Oi! 👋 Me conta seus gastos e ganhos naturalmente.\n\nEx: *"Gastei R$45 no almoço"* ou *"Recebi R$2000 de salário"*'}],pending=null,loading=false,txType='expense',selEmo='✈️';
+
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return{transactions:[],goals:[]};}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+const fmt=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const today=()=>new Date().toISOString().split('T')[0];
+function totals(){const inc=data.transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);const exp=data.transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);return{inc,exp,bal:inc-exp};}
+
+function updateHeader(){
+  document.getElementById('month-lbl').textContent=new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const{inc,exp,bal}=totals();
+  const bd=document.getElementById('bal-disp');
+  bd.textContent=fmt(bal);bd.style.color=bal>=0?'var(--green)':'var(--red)';
+  document.getElementById('inc-disp').textContent=fmt(inc);
+  document.getElementById('exp-disp').textContent=fmt(exp);
+}
+
+function go(t){
+  tab=t;
+  ['db','ch','mt'].forEach((id,i)=>document.getElementById('tab-'+id).classList.toggle('active',['dashboard','chat','metas'][i]===t));
+  document.getElementById('input-bar').style.display=t==='chat'?'block':'none';
+  render();
+}
+
+function render(){
+  const el=document.getElementById('content');
+  if(tab==='dashboard')el.innerHTML=renderDash();
+  else if(tab==='chat'){el.innerHTML=renderChat();scrollEnd();}
+  else el.innerHTML=renderMetas();
+}
+
+function renderDash(){
+  const expByCat=data.transactions.filter(t=>t.type==='expense').reduce((a,t)=>{a[t.category]=(a[t.category]||0)+t.amount;return a;},{});
+  const total=Object.values(expByCat).reduce((s,v)=>s+v,0)||1;
+  const sorted=Object.entries(expByCat).sort((a,b)=>b[1]-a[1]);
+  let cats=sorted.length?sorted.map(([cat,amt])=>`
+    <div class="cat-item">
+      <div class="cat-icon">${CATS[cat]||'✨'}</div>
+      <div class="cat-name">${cat}</div>
+      <div class="cat-val">${fmt(amt)}</div>
+      <div class="cat-pct">${Math.round(amt/total*100)}%</div>
+    </div>`).join(''):`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Nenhum gasto ainda.<br>Use o chat pra registrar!</div></div>`;
+
+  const recent=[...data.transactions].reverse().slice(0,8);
+  let txs=recent.length?recent.map(t=>`
+    <div class="tx-item">
+      <div class="tx-ico">${CATS[t.category]||'✨'}</div>
+      <div>
+        <div class="tx-desc">${t.description}</div>
+        <div class="tx-meta">${t.category} · ${new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
+        <button class="tx-del" onclick="delTx(${t.id})">×</button>
+      </div>
+    </div>`).join(''):`<div class="empty"><div class="empty-icon">💸</div><div class="empty-text">Nenhuma transação ainda.</div></div>`;
+
+  return`<div class="sec-lbl" style="margin-top:4px">CATEGORIAS</div>
+    <div style="margin-bottom:22px">${cats}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="sec-lbl" style="margin:0">TRANSAÇÕES</div>
+      <button onclick="openTxModal()" style="background:none;border:none;color:var(--accent);font-family:'Poppins',sans-serif;font-size:11px;font-weight:500;cursor:pointer">+ adicionar</button>
+    </div>
+    <div style="margin-bottom:30px">${txs}</div>`;
+}
+
+function delTx(id){data.transactions=data.transactions.filter(t=>t.id!==id);save();updateHeader();render();}
+
+function renderChat(){
+  let conf='';
+  if(pending){
+    conf=`<div class="confirm-wrap">
+      <div class="confirm-lbl">CONFIRMAR REGISTRO?</div>
+      <div class="confirm-body">
+        <div style="font-size:22px">${CATS[pending.category]||'✨'}</div>
+        <div>
+          <div class="confirm-amount" style="color:${pending.type==='income'?'var(--green)':'var(--red)'}">${pending.type==='income'?'+':'-'}${fmt(pending.amount)}</div>
+          <div class="confirm-cat">${pending.category} · ${pending.description.slice(0,30)}</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="cbtn cbtn-ok" onclick="okTx()">✓ Confirmar</button>
+        <button class="cbtn cbtn-no" onclick="nopeTx()">Cancelar</button>
+      </div>
+    </div>`;
+  }
+  const bubbles=msgs.map(m=>{
+    if(m.r==='typing')return`<div class="msg bot"><div class="msg-av">⚡</div><div class="msg-bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+    return`<div class="msg ${m.r==='user'?'user':'bot'}">
+      ${m.r!=='user'?'<div class="msg-av">⚡</div>':''}
+      <div class="msg-bubble">${m.t.replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>')}</div>
+    </div>`;
+  }).join('');
+  return`<div class="chat-list">${conf}${bubbles}<div id="end"></div></div>`;
+}
+
+function scrollEnd(){setTimeout(()=>{const e=document.getElementById('end');if(e)e.scrollIntoView({behavior:'smooth'});},50);}
+function toggleSend(v){const b=document.getElementById('send-btn');if(b)b.className='send'+(v.trim()?' on':'');}
+
+async function send(){
+  const inp=document.getElementById('chat-in');
+  const txt=inp.value.trim();
+  if(!txt||loading)return;
+  inp.value='';toggleSend('');
+  msgs.push({r:'user',t:txt});msgs.push({r:'typing'});
+  render();scrollEnd();loading=true;
+  const parsed=parseTx(txt);
+  try{
+    const{bal}=totals();
+    const recent=data.transactions.slice(-5).map(t=>`${t.type==='income'?'+':'-'}R$${t.amount} (${t.category}): ${t.description}`).join('\n');
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`Você é FinAI, assistente financeiro pessoal. Responda em português, máximo 2-3 linhas curtas, use emojis. Saldo: ${fmt(bal)}. Últimas: ${recent}`,messages:[...msgs.filter(m=>m.r==='user').slice(-6).map(m=>({role:'user',content:m.t})),{role:'user',content:txt}]})});
+    const d=await res.json();
+    const reply=d.content?.[0]?.text||'Não entendi, tenta de novo! 😅';
+    msgs=msgs.filter(m=>m.r!=='typing');msgs.push({r:'bot',t:reply});
+    if(parsed&&/gastei|paguei|comprei|recebi|ganhei|entrou|saiu/i.test(txt))pending=parsed;
+  }catch(e){msgs=msgs.filter(m=>m.r!=='typing');msgs.push({r:'bot',t:'Probleminha técnico 😅 Tenta de novo!'});}
+  loading=false;render();scrollEnd();
+}
+
+function parseTx(txt){
+  const m=txt.match(/R?\$?\s?(\d+(?:[.,]\d+)?)/);if(!m)return null;
+  const amount=parseFloat(m[1].replace(',','.'));const l=txt.toLowerCase();
+  let type=/recebi|ganhei|salário|entrou|renda|freelance/i.test(l)?'income':'expense';
+  let cat='outros';
+  if(/comida|almoço|jantar|lanche|restaurante|ifood|supermercado|mercado/i.test(l))cat='alimentação';
+  else if(/uber|99|ônibus|metrô|gasolina|transporte/i.test(l))cat='transporte';
+  else if(/netflix|cinema|jogo|game|festa|bar|lazer/i.test(l))cat='lazer';
+  else if(/farmácia|médico|academia|saúde|remédio/i.test(l))cat='saúde';
+  else if(/aluguel|condomínio|energia|água|internet|moradia/i.test(l))cat='moradia';
+  else if(/curso|livro|escola|faculdade/i.test(l))cat='educação';
+  else if(/salário|salario/i.test(l))cat='salário';
+  else if(/freelance|projeto|cliente/i.test(l))cat='freelance';
+  else if(/investimento|ação|fundo/i.test(l))cat='investimento';
+  return{id:Date.now(),type,amount,category:cat,description:txt.slice(0,40),date:today()};
+}
+
+function okTx(){if(!pending)return;data.transactions.push(pending);save();pending=null;updateHeader();render();scrollEnd();}
+function nopeTx(){pending=null;render();}
+
+function renderMetas(){
+  const cards=data.goals.map(g=>{
+    const pct=Math.min(100,Math.round(g.current/g.target*100));
+    return`<div class="goal-item">
+      <div class="goal-top">
+        <div class="goal-info">
+          <div class="goal-ico">${g.icon}</div>
+          <div><div class="goal-name">${g.name}</div><div class="goal-rem">Faltam ${fmt(g.target-g.current)}</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div class="goal-pct" style="color:${g.color}">${pct}%</div>
+          <button class="goal-del" onclick="delGoal(${g.id})">×</button>
+        </div>
+      </div>
+      <div class="goal-bar"><div class="goal-fill" style="width:${pct}%;background:${g.color}"></div></div>
+      <div class="goal-nums"><span style="color:${g.color};font-weight:500">${fmt(g.current)}</span><span style="color:var(--sub)">meta ${fmt(g.target)}</span></div>
+    </div>`;
+  }).join('');
+  const empty=!data.goals.length?`<div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">Nenhuma meta ainda.<br>Crie a primeira!</div></div>`:'';
+  return`<div class="sec-lbl" style="margin-top:4px">SUAS METAS</div>${empty}${cards}<button class="add-btn" onclick="openGoalModal()">+ nova meta</button>`;
+}
+
+function delGoal(id){data.goals=data.goals.filter(g=>g.id!==id);save();render();}
+
+function openTxModal(){txType='expense';document.getElementById('tx-desc').value='';document.getElementById('tx-amt').value='';document.getElementById('tx-modal').style.display='flex';}
+function closeTx(){document.getElementById('tx-modal').style.display='none';}
+function setType(t){txType=t;document.getElementById('type-exp').className='type-btn'+(t==='expense'?' on-exp':'');document.getElementById('type-inc').className='type-btn'+(t==='income'?' on-inc':'');}
+function saveTx(){
+  const desc=document.getElementById('tx-desc').value.trim();
+  const amt=parseFloat(document.getElementById('tx-amt').value)||0;
+  const cat=document.getElementById('tx-cat').value;
+  if(!desc||!amt)return;
+  data.transactions.push({id:Date.now(),type:txType,amount:amt,description:desc,category:cat,date:today()});
+  save();updateHeader();closeTx();render();
+}
+
+function openGoalModal(){selEmo='✈️';document.getElementById('g-name').value='';document.getElementById('g-target').value='';document.getElementById('g-cur').value='';document.getElementById('emo-grid').innerHTML=EMOJIS.map(e=>`<button class="emo${e===selEmo?' on':''}" onclick="pickEmo('${e}')">${e}</button>`).join('');document.getElementById('goal-modal').style.display='flex';}
+function closeGoal(){document.getElementById('goal-modal').style.display='none';}
+function pickEmo(e){selEmo=e;document.querySelectorAll('.emo').forEach(b=>b.classList.toggle('on',b.textContent===e));}
+function saveGoal(){
+  const name=document.getElementById('g-name').value.trim();
+  const target=parseFloat(document.getElementById('g-target').value)||0;
+  const cur=parseFloat(document.getElementById('g-cur').value)||0;
+  if(!name||!target)return;
+  data.goals.push({id:Date.now(),name,target,current:cur,icon:selEmo,color:COLORS[data.goals.length%COLORS.length]});
+  save();closeGoal();render();
+}
+
+updateHeader();render();
+</script>
+</body>
+</html>
