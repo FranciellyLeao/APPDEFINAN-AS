@@ -307,7 +307,7 @@ async function send(){
   try{
     const{bal}=totals();
     const recent=data.transactions.slice(-5).map(t=>`${t.type==='income'?'+':'-'}R$${t.amount} (${t.category}): ${t.description}`).join('\n');
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`Você é FinAI, assistente financeiro pessoal. Responda em português, máximo 2-3 linhas curtas, use emojis. Saldo: ${fmt(bal)}. Últimas: ${recent}`,messages:[...msgs.filter(m=>m.r==='user').slice(-6).map(m=>({role:'user',content:m.t})),{role:'user',content:txt}]})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`Você é FinAI, assistente financeiro pessoal. Responda em português, máximo 2-3 linhas curtas, use emojis. Saldo: ${fmt(bal)}. Últimas: ${recent}`,messages:[...msgs.filter(m=>m.r==='user').slice(-6).map(m=>({role:'user',content:m.t})),{role:'user',content:txt}]})});
     const d=await res.json();
     const reply=d.content?.[0]?.text||'Não entendi, tenta de novo! 😅';
     msgs=msgs.filter(m=>m.r!=='typing');msgs.push({r:'bot',t:reply});
