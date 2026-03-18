@@ -260,19 +260,21 @@
       box-shadow:var(--shadow);
     }
 
-    .nav-btn{
-      flex:1;
-      border:none;
-      background:transparent;
-      color:var(--muted);
-      font-family:'Manrope',sans-serif;
-      font-size:12px;
-      font-weight:700;
-      padding:11px 8px;
-      border-radius:14px;
-      cursor:pointer;
-      transition:.2s ease;
-    }
+.nav-btn{
+  flex:1;
+  border:none;
+  background:transparent;
+  color:var(--muted);
+  font-family:'Manrope',sans-serif;
+  font-size:11px;
+  font-weight:700;
+  padding:11px 6px;
+  border-radius:14px;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+
 
     .nav-btn.active{
       background:linear-gradient(135deg, rgba(73,198,255,.18), rgba(255,255,255,.05));
@@ -1043,6 +1045,7 @@
         <button class="nav-btn active" id="tab-chat" onclick="go('chat')">Chat</button>
         <button class="nav-btn" id="tab-metas" onclick="go('metas')">Metas</button>
         <button class="nav-btn" id="tab-saude" onclick="go('saude')">Saúde</button>
+        <button class="nav-btn" id="tab-parcelas" onclick="go('parcelas')">Parcelas</button>
       </div>
     </div>
 
@@ -1133,19 +1136,21 @@
 
     function go(t){
       tab=t;
-      ['chat','metas','saude'].forEach(id=>document.getElementById('tab-'+id).classList.toggle('active',id===t));
+      ['chat','metas','saude','parcelas'].forEach(id=>document.getElementById('tab-'+id).classList.toggle('active',id===t));
       document.getElementById('input-bar').style.display=t==='chat'?'block':'none';
       render();
     }
 
     function render(){
-      const el=document.getElementById('content');
-      if(tab==='chat') el.innerHTML=renderChat();
-      else if(tab==='metas') el.innerHTML=renderMetas();
-      else el.innerHTML=renderSaude();
+  const el=document.getElementById('content');
+  if(tab==='chat') el.innerHTML=renderChat();
+  else if(tab==='metas') el.innerHTML=renderMetas();
+  else if(tab==='saude') el.innerHTML=renderSaude();
+  else el.innerHTML=renderParcelas();
 
-      renderAccordions();
-      if(tab==='chat') scrollEnd();
+  renderAccordions();
+  if(tab==='chat') scrollEnd();
+}
     }
 
     function renderAccordions(){
@@ -1241,6 +1246,49 @@
       const empty=!data.goals.length?`<div class="empty"><div class="empty-icon">🎯</div>Você ainda não criou metas.</div>`:'';
       return `<div class="section-tag">Suas metas</div>${empty}${cards}<button class="add-btn" onclick="openGoalModal()">+ nova meta</button>`;
     }
+function renderParcelas(){
+  const parcelas=data.transactions.filter(t=>t.isInstallment && t.type==='expense');
+
+  if(!parcelas.length){
+    return `
+      <div class="section-tag">Parcelas</div>
+      <div class="empty">
+        <div class="empty-icon">💳</div>
+        Nenhuma compra parcelada ainda.
+      </div>`;
+  }
+
+  const cards=parcelas.map(t=>{
+    const total=t.installments||1;
+    const atual=t.installmentCurrent||1;
+    const valorParcela=t.installmentAmount||t.amount;
+    const faltamParcelas=Math.max(0,total-atual);
+    const faltamValor=valorParcela*faltamParcelas;
+
+    return `
+      <div class="goal-item">
+        <div class="goal-top">
+          <div class="goal-info">
+            <div class="goal-ico">💳</div>
+            <div>
+              <div class="goal-name">${t.description}</div>
+              <div class="goal-rem">${t.category} · ${new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+            </div>
+          </div>
+          <div class="goal-pct" style="color:var(--yellow)">${atual}/${total}</div>
+        </div>
+        <div class="goal-bar">
+          <div class="goal-fill" style="width:${Math.round((atual/total)*100)}%;background:var(--yellow)"></div>
+        </div>
+        <div class="goal-nums">
+          <span style="color:var(--text)">parcela ${fmt(valorParcela)}</span>
+          <span>faltam ${fmt(faltamValor)}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `<div class="section-tag">Parcelas</div>${cards}<div style="height:92px"></div>`;
+}
 
     function renderSaude(){
       const {exp}=totals();
@@ -1419,13 +1467,18 @@
       const type=inferType(l);
 
       return{
-        id:Date.now(),
-        type,
-        amount,
-        category,
-        description:buildDescription(txt, installment),
-        date:detectDate(txt),
-        installments: installment ? installment.count : null
+  id:Date.now(),
+  type,
+  amount,
+  category,
+  description:buildDescription(txt, installment),
+  date:detectDate(txt),
+  installments: installment ? installment.count : null,
+  installmentAmount: installment ? installment.amount : null,
+  installmentCurrent: installment ? 1 : null,
+  isInstallment: !!installment
+};
+
       };
     }
 
