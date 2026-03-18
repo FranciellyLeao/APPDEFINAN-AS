@@ -11,24 +11,16 @@
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
       --bg:#081018;
-      --bg-2:#0c1824;
       --surface:rgba(16,28,41,.82);
-      --surface-2:rgba(20,36,53,.94);
-      --card:#102131;
-      --card-2:#14283b;
       --border:rgba(181,217,255,.10);
       --text:#eff7ff;
       --muted:#91a7bb;
       --soft:#c8d7e5;
       --accent:#49c6ff;
-      --accent-2:#00e0b8;
       --green:#67f0aa;
       --red:#ff7c7c;
       --yellow:#ffcc66;
       --shadow:0 20px 60px rgba(0,0,0,.35);
-      --radius-xl:24px;
-      --radius-lg:18px;
-      --radius-md:14px;
     }
 
     html,body{
@@ -319,7 +311,7 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      padding:16px 16px;
+      padding:16px;
       cursor:pointer;
       gap:12px;
     }
@@ -444,13 +436,14 @@
     }
 
     .chat-shell{
-      padding-bottom:88px;
+      padding-bottom:104px;
     }
 
     .chat-list{
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:12px;
+      padding-bottom:12px;
     }
 
     .msg{
@@ -478,11 +471,11 @@
     }
 
     .msg-bubble{
-      max-width:80%;
-      padding:12px 14px;
+      max-width:84%;
+      padding:13px 15px;
       border-radius:18px;
       font-size:13px;
-      line-height:1.55;
+      line-height:1.65;
       box-shadow:var(--shadow);
     }
 
@@ -714,7 +707,7 @@
       font-weight:700;
     }
 
-    .saude-input,.field input,.field select{
+    .saude-input,.field input{
       width:100%;
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.08);
@@ -726,7 +719,7 @@
       outline:none;
     }
 
-    .saude-input:focus,.field input:focus,.field select:focus{
+    .saude-input:focus,.field input:focus{
       border-color:rgba(73,198,255,.38);
       box-shadow:0 0 0 4px rgba(73,198,255,.08);
     }
@@ -1090,13 +1083,13 @@
   </div>
 
   <script>
-    const KEY='finai_v4';
+    const KEY='finai_v5';
     const EMOJIS=['✈️','🛡️','💻','🏠','🚗','📱','🎓','💰','🏖️','🎸','🌍','🐶','🎮','💍','🏋️'];
     const CATS={alimentação:'🍔',transporte:'🚗',lazer:'🎮',saúde:'💊',moradia:'🏠',educação:'📚',salário:'💼',freelance:'💻',investimento:'📈',outros:'✨'};
     const COLORS=['#67F0AA','#49C6FF','#FF8FA3','#FDBA74','#A78BFA','#2DD4BF','#FACC15'];
 
     let data=load(),tab='chat';
-    let msgs=[{r:'bot',t:'Oi! Eu posso registrar seus gastos e ganhos rapidinho.\n\nEx: *"Gastei R$45 no almoço"* ou *"Recebi R$2000 de salário"*'}];
+    let msgs=[{r:'bot',t:'Oi! Eu posso registrar seus gastos e ganhos rapidinho.\n\nEx: *"Gastei R$45 no almoço"*, *"Ganhei R$250 no freela"* ou *"Paguei 3x de 120 no celular"*'}];
     let pending=null,loading=false,selEmo='✈️',dicasLoading=false;
     let accOpen={gastos:false,transacoes:false};
 
@@ -1196,7 +1189,7 @@
             <div class="confirm-icon">${CATS[pending.category]||'✨'}</div>
             <div>
               <div class="confirm-amt" style="color:${pending.type==='income'?'var(--green)':'var(--red)'}">${pending.type==='income'?'+':'-'}${fmt(pending.amount)}</div>
-              <div class="confirm-cat">${pending.category} · ${pending.description.slice(0,32)}</div>
+              <div class="confirm-cat">${pending.category} · ${pending.description.slice(0,38)}</div>
             </div>
           </div>
           <div class="btn-row">
@@ -1350,32 +1343,89 @@
       if(b)b.className='send'+(v.trim()?' on':'');
     }
 
-    function parseTx(txt){
-      const m=txt.match(/R?\$?\s?(\d+(?:[.,]\d+)?)/);
-      if(!m)return null;
-
-      const amount=parseFloat(m[1].replace(',','.'));
+    function detectDate(txt){
       const l=txt.toLowerCase();
-      let type=/recebi|ganhei|salário|salario|entrou|renda|freelance|freela|cliente|job/i.test(l)?'income':'expense';
-      let cat='outros';
+      const d=new Date();
+      if(/anteontem/.test(l)) d.setDate(d.getDate()-2);
+      else if(/ontem/.test(l)) d.setDate(d.getDate()-1);
+      else if(/amanhã|amanha/.test(l)) d.setDate(d.getDate()+1);
+      return d.toISOString().split('T')[0];
+    }
 
-      if(/comida|almoço|almoco|jantar|lanche|restaurante|ifood|supermercado|mercado/i.test(l))cat='alimentação';
-      else if(/uber|99|ônibus|onibus|metrô|metro|gasolina|transporte/i.test(l))cat='transporte';
-      else if(/netflix|cinema|jogo|game|festa|bar|lazer/i.test(l))cat='lazer';
-      else if(/farmácia|farmacia|médico|medico|academia|saúde|saude|remédio|remedio/i.test(l))cat='saúde';
-      else if(/aluguel|condomínio|condominio|energia|água|agua|internet|moradia/i.test(l))cat='moradia';
-      else if(/curso|livro|escola|faculdade/i.test(l))cat='educação';
-      else if(/salário|salario/i.test(l))cat='salário';
-      else if(/freelance|freela|projeto|cliente|job/i.test(l))cat='freelance';
-      else if(/investimento|ação|acao|fundo/i.test(l))cat='investimento';
+    function detectInstallments(txt){
+      const l=txt.toLowerCase();
+      const match=l.match(/(\d{1,2})\s*x\s*(?:de\s*)?(\d+(?:[.,]\d+)?)/i);
+      if(!match) return null;
+      return {
+        count: parseInt(match[1],10),
+        amount: parseFloat(match[2].replace(',','.'))
+      };
+    }
+
+    function normalizeText(txt){
+      return txt
+        .toLowerCase()
+        .replace(/á|à|ã|â/g,'a')
+        .replace(/é|ê/g,'e')
+        .replace(/í/g,'i')
+        .replace(/ó|ô|õ/g,'o')
+        .replace(/ú/g,'u')
+        .replace(/ç/g,'c');
+    }
+
+    function inferCategory(l){
+      if(/almoco|janta|jantar|lanche|cafe|caf[eé]zinho|restaurante|ifood|mercado|mercadinho|supermercado|padaria|burger|hamburg|pizza|acai/.test(l)) return 'alimentação';
+      if(/uber|99|busao|onibus|metro|metr[oô]|gasolina|gasosa|combustivel|estacionamento|transporte/.test(l)) return 'transporte';
+      if(/netflix|spotify|cinema|cineminha|jogo|game|festa|bar|rol[eê]|lazer|show/.test(l)) return 'lazer';
+      if(/farmacia|medico|dentista|academia|saude|remedio|hospital|consulta/.test(l)) return 'saúde';
+      if(/aluguel|alugas|condominio|energia|luz|agua|internet|moradia|gas|conta de casa/.test(l)) return 'moradia';
+      if(/curso|livro|escola|faculdade|facul|mensalidade|educacao/.test(l)) return 'educação';
+      if(/salario|folha|pagamento mensal/.test(l)) return 'salário';
+      if(/freelance|freela|trampei|job|cliente|projeto|extra|pix que recebi/.test(l)) return 'freelance';
+      if(/investimento|acao|fundo|tesouro|cdb|aporte|cripto/.test(l)) return 'investimento';
+      return 'outros';
+    }
+
+    function inferType(l){
+      return /recebi|ganhei|entrou|renda|salario|freela|freelance|trampei|cliente|job|pix que recebi|me pagaram|caiu/i.test(l)
+        ? 'income'
+        : 'expense';
+    }
+
+    function extractAmount(txt){
+      const installment=detectInstallments(txt);
+      if(installment) return installment.amount;
+
+      const m=txt.match(/R?\$?\s?(\d+(?:[.,]\d+)?)/);
+      if(!m) return null;
+      return parseFloat(m[1].replace(',','.'));
+    }
+
+    function buildDescription(txt, installment){
+      let desc=txt.trim();
+      if(installment && !/parcela|x/i.test(desc.split(' ').slice(-4).join(' '))){
+        desc=`${desc} (${installment.count}x)`;
+      }
+      return desc.slice(0,48);
+    }
+
+    function parseTx(txt){
+      const l=normalizeText(txt);
+      const amount=extractAmount(txt);
+      if(!amount) return null;
+
+      const installment=detectInstallments(txt);
+      const category=inferCategory(l);
+      const type=inferType(l);
 
       return{
         id:Date.now(),
         type,
         amount,
-        category:cat,
-        description:txt.slice(0,40),
-        date:today()
+        category,
+        description:buildDescription(txt, installment),
+        date:detectDate(txt),
+        installments: installment ? installment.count : null
       };
     }
 
@@ -1383,11 +1433,13 @@
       if(parsed){
         const tipo = parsed.type === 'income' ? 'entrada' : 'gasto';
         const sinal = parsed.type === 'income' ? '+' : '-';
-        return `Entendi ${tipo} de ${sinal}${fmt(parsed.amount)} em ${parsed.category}. Você pode confirmar nos botões ou responder "sim".`;
+        const when = parsed.date === today() ? 'hoje' : 'na data informada';
+        const parcelado = parsed.installments ? ` em ${parsed.installments}x` : '';
+        return `Entendi ${tipo} de ${sinal}${fmt(parsed.amount)}${parcelado} em ${parsed.category}, ${when}. Você pode confirmar nos botões ou responder "sim".`;
       }
 
       if(/oi|olá|ola|bom dia|boa tarde|boa noite/i.test(txt)){
-        return 'Oi! Me manda algo como "Gastei R$45 no almoço" ou "Recebi R$2000 de salário".';
+        return 'Oi! Você pode mandar algo como "gastei 20 no busao ontem", "ganhei 300 no freela" ou "paguei 3x de 120 no celular".';
       }
 
       if(/saldo|quanto tenho|quanto sobrou/i.test(txt)){
@@ -1396,10 +1448,10 @@
       }
 
       if(/ajuda|como funciona/i.test(txt)){
-        return 'Você pode registrar entradas e saídas direto pelo chat.';
+        return 'Você pode registrar entradas e saídas direto pelo chat, inclusive com gíria, data simples e compra parcelada.';
       }
 
-      return 'Me fala um gasto ou ganho com valor, por exemplo: *"Gastei R$50 no mercado"*.';
+      return 'Me fala um gasto ou ganho com valor, por exemplo: *"gastei 20 no uber ontem"* ou *"comprei em 3x de 120"*.';
     }
 
     function localDicas(){
@@ -1445,9 +1497,9 @@
       inp.value='';
       toggleSend('');
 
-      const lower=txt.toLowerCase();
+      const lower=normalizeText(txt);
 
-      if(pending && /^(sim|s|confirmar|confirma|ok|pode salvar|salvar)$/.test(lower)){
+      if(pending && /^(sim|s|confirmar|confirma|ok|pode salvar|salvar|fecha)$/.test(lower)){
         msgs.push({r:'user',t:txt});
         data.transactions.push(pending);
         save();
@@ -1459,7 +1511,7 @@
         return;
       }
 
-      if(pending && /^(não|nao|n|cancelar|cancela)$/.test(lower)){
+      if(pending && /^(nao|n|cancelar|cancela|deixa|deixa quieto)$/.test(lower)){
         msgs.push({r:'user',t:txt});
         pending=null;
         msgs.push({r:'bot',t:'Tudo bem, cancelei esse registro.'});
