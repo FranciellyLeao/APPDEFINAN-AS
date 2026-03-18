@@ -261,21 +261,19 @@
       box-shadow:var(--shadow);
     }
 
-.nav-btn{
-  flex:1;
-  border:none;
-  background:transparent;
-  color:var(--muted);
-  font-family:'Manrope',sans-serif;
-  font-size:11px;
-  font-weight:700;
-  padding:11px 6px;
-  border-radius:14px;
-  cursor:pointer;
-  transition:.2s ease;
-}
-
-
+    .nav-btn{
+      flex:1;
+      border:none;
+      background:transparent;
+      color:var(--muted);
+      font-family:'Manrope',sans-serif;
+      font-size:11px;
+      font-weight:700;
+      padding:11px 6px;
+      border-radius:14px;
+      cursor:pointer;
+      transition:.2s ease;
+    }
 
     .nav-btn.active{
       background:linear-gradient(135deg, rgba(73,198,255,.18), rgba(255,255,255,.05));
@@ -591,7 +589,7 @@
       border:1px solid rgba(255,255,255,.06);
     }
 
-    .goal-item,.saude-card{
+    .goal-item,.saude-card,.parcel-card{
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.07);
       border-radius:22px;
@@ -664,6 +662,36 @@
       font-size:11px;
       color:var(--muted);
       font-weight:700;
+    }
+
+    .parcel-actions{
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .parcel-btn{
+      flex:1;
+      border:none;
+      border-radius:14px;
+      padding:10px 12px;
+      font-family:'Manrope',sans-serif;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+    }
+
+    .parcel-btn.primary{
+      background:linear-gradient(135deg, rgba(255,204,102,.30), rgba(255,204,102,.16));
+      color:#fff3c7;
+      border:1px solid rgba(255,204,102,.18);
+    }
+
+    .parcel-btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
     }
 
     .add-btn,.gerar-btn,.submit{
@@ -1087,7 +1115,7 @@
   </div>
 
   <script>
-    const KEY='finai_v5';
+    const KEY='finai_v7';
     const EMOJIS=['✈️','🛡️','💻','🏠','🚗','📱','🎓','💰','🏖️','🎸','🌍','🐶','🎮','💍','🏋️'];
     const CATS={alimentação:'🍔',transporte:'🚗',lazer:'🎮',saúde:'💊',moradia:'🏠',educação:'📚',salário:'💼',freelance:'💻',investimento:'📈',outros:'✨'};
     const COLORS=['#67F0AA','#49C6FF','#FF8FA3','#FDBA74','#A78BFA','#2DD4BF','#FACC15'];
@@ -1111,9 +1139,19 @@
     const diasNoMes=()=>new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
     const diaAtual=()=>new Date().getDate();
 
+    function monthlyExpenseValue(t){
+      return t.isInstallment ? (t.installmentAmount || t.amount) : t.amount;
+    }
+
     function totals(){
-      const inc=data.transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-      const exp=data.transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      const inc=data.transactions
+        .filter(t=>t.type==='income')
+        .reduce((s,t)=>s+t.amount,0);
+
+      const exp=data.transactions
+        .filter(t=>t.type==='expense')
+        .reduce((s,t)=>s+monthlyExpenseValue(t),0);
+
       return{inc,exp,bal:inc-exp};
     }
 
@@ -1143,19 +1181,24 @@
     }
 
     function render(){
-  const el=document.getElementById('content');
-  if(tab==='chat') el.innerHTML=renderChat();
-  else if(tab==='metas') el.innerHTML=renderMetas();
-  else if(tab==='saude') el.innerHTML=renderSaude();
-  else el.innerHTML=renderParcelas();
+      const el=document.getElementById('content');
+      if(tab==='chat') el.innerHTML=renderChat();
+      else if(tab==='metas') el.innerHTML=renderMetas();
+      else if(tab==='saude') el.innerHTML=renderSaude();
+      else el.innerHTML=renderParcelas();
 
-  renderAccordions();
-  if(tab==='chat') scrollEnd();
-}
+      renderAccordions();
+      if(tab==='chat') scrollEnd();
     }
 
     function renderAccordions(){
-      const expByCat=data.transactions.filter(t=>t.type==='expense').reduce((a,t)=>{a[t.category]=(a[t.category]||0)+t.amount;return a;},{});
+      const expByCat=data.transactions
+        .filter(t=>t.type==='expense')
+        .reduce((a,t)=>{
+          a[t.category]=(a[t.category]||0)+monthlyExpenseValue(t);
+          return a;
+        },{});
+
       const total=Object.values(expByCat).reduce((s,v)=>s+v,0)||1;
 
       const catRows=Object.entries(expByCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>`
@@ -1167,18 +1210,22 @@
         </div>`).join('')||`<div class="empty">Nenhum gasto ainda.</div>`;
 
       const recent=[...data.transactions].reverse().slice(0,10);
-      const txRows=recent.map(t=>`
-        <div class="tx-item">
-          <div class="tx-ico">${CATS[t.category]||'✨'}</div>
-          <div class="tx-main">
-            <div class="tx-desc">${t.description}</div>
-            <div class="tx-meta">${t.category} · ${new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
-          </div>
-          <div class="tx-right">
-            <div class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
-            <button class="tx-del" onclick="delTx(${t.id})">×</button>
-          </div>
-        </div>`).join('')||`<div class="empty">Nenhuma transação ainda.</div>`;
+      const txRows=recent.map(t=>{
+        const valor=t.type==='expense' ? monthlyExpenseValue(t) : t.amount;
+        const etiqueta=t.isInstallment ? ` · ${t.installmentCurrent||1}/${t.installments||1}` : '';
+        return `
+          <div class="tx-item">
+            <div class="tx-ico">${CATS[t.category]||'✨'}</div>
+            <div class="tx-main">
+              <div class="tx-desc">${t.description}</div>
+              <div class="tx-meta">${t.category}${etiqueta} · ${new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+            </div>
+            <div class="tx-right">
+              <div class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(valor)}</div>
+              <button class="tx-del" onclick="delTx(${t.id})">×</button>
+            </div>
+          </div>`;
+      }).join('')||`<div class="empty">Nenhuma transação ainda.</div>`;
 
       const bg=document.getElementById('body-gastos');
       const bt=document.getElementById('body-transacoes');
@@ -1189,12 +1236,13 @@
     function renderChat(){
       let conf='';
       if(pending){
+        const pendingAmount=pending.type==='expense' ? monthlyExpenseValue(pending) : pending.amount;
         conf=`<div class="confirm-wrap">
           <div class="confirm-lbl">Confirmar registro</div>
           <div class="confirm-body">
             <div class="confirm-icon">${CATS[pending.category]||'✨'}</div>
             <div>
-              <div class="confirm-amt" style="color:${pending.type==='income'?'var(--green)':'var(--red)'}">${pending.type==='income'?'+':'-'}${fmt(pending.amount)}</div>
+              <div class="confirm-amt" style="color:${pending.type==='income'?'var(--green)':'var(--red)'}">${pending.type==='income'?'+':'-'}${fmt(pendingAmount)}</div>
               <div class="confirm-cat">${pending.category} · ${pending.description.slice(0,38)}</div>
             </div>
           </div>
@@ -1247,49 +1295,91 @@
       const empty=!data.goals.length?`<div class="empty"><div class="empty-icon">🎯</div>Você ainda não criou metas.</div>`:'';
       return `<div class="section-tag">Suas metas</div>${empty}${cards}<button class="add-btn" onclick="openGoalModal()">+ nova meta</button>`;
     }
-function renderParcelas(){
-  const parcelas=data.transactions.filter(t=>t.isInstallment && t.type==='expense');
 
-  if(!parcelas.length){
-    return `
-      <div class="section-tag">Parcelas</div>
-      <div class="empty">
-        <div class="empty-icon">💳</div>
-        Nenhuma compra parcelada ainda.
-      </div>`;
-  }
+    function renderParcelas(){
+      const parcelas=data.transactions.filter(t=>t.isInstallment && t.type==='expense');
+      const totalMensal=parcelas.reduce((s,t)=>s+monthlyExpenseValue(t),0);
+      const totalFaltando=parcelas.reduce((s,t)=>{
+        const total=t.installments||1;
+        const atual=t.installmentCurrent||1;
+        const valor=monthlyExpenseValue(t);
+        return s + Math.max(0,(total-atual)*valor);
+      },0);
 
-  const cards=parcelas.map(t=>{
-    const total=t.installments||1;
-    const atual=t.installmentCurrent||1;
-    const valorParcela=t.installmentAmount||t.amount;
-    const faltamParcelas=Math.max(0,total-atual);
-    const faltamValor=valorParcela*faltamParcelas;
-
-    return `
-      <div class="goal-item">
-        <div class="goal-top">
-          <div class="goal-info">
-            <div class="goal-ico">💳</div>
-            <div>
-              <div class="goal-name">${t.description}</div>
-              <div class="goal-rem">${t.category} · ${new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+      if(!parcelas.length){
+        return `
+          <div class="section-tag">Parcelas</div>
+          <div class="stat-grid" style="margin-top:4px">
+            <div class="stat-box">
+              <div class="stat-lbl">Peso no mês</div>
+              <div class="stat-val">${fmt(0)}</div>
+              <div class="stat-sub">em parcelas ativas</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-lbl">Saldo parcelado</div>
+              <div class="stat-val">${fmt(0)}</div>
+              <div class="stat-sub">faltando pagar</div>
             </div>
           </div>
-          <div class="goal-pct" style="color:var(--yellow)">${atual}/${total}</div>
-        </div>
-        <div class="goal-bar">
-          <div class="goal-fill" style="width:${Math.round((atual/total)*100)}%;background:var(--yellow)"></div>
-        </div>
-        <div class="goal-nums">
-          <span style="color:var(--text)">parcela ${fmt(valorParcela)}</span>
-          <span>faltam ${fmt(faltamValor)}</span>
-        </div>
-      </div>`;
-  }).join('');
+          <div class="empty">
+            <div class="empty-icon">💳</div>
+            Nenhuma compra parcelada ainda.
+          </div>`;
+      }
 
-  return `<div class="section-tag">Parcelas</div>${cards}<div style="height:92px"></div>`;
-}
+      const cards=parcelas.map(t=>{
+        const total=t.installments||1;
+        const atual=t.installmentCurrent||1;
+        const valorParcela=monthlyExpenseValue(t);
+        const faltamParcelas=Math.max(0,total-atual);
+        const faltamValor=valorParcela*faltamParcelas;
+        const pct=Math.round((atual/total)*100);
+
+        return `
+          <div class="parcel-card">
+            <div class="goal-top">
+              <div class="goal-info">
+                <div class="goal-ico">💳</div>
+                <div>
+                  <div class="goal-name">${t.description}</div>
+                  <div class="goal-rem">${t.category} · ${new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+                </div>
+              </div>
+              <div class="goal-pct" style="color:var(--yellow)">${atual}/${total}</div>
+            </div>
+            <div class="goal-bar">
+              <div class="goal-fill" style="width:${pct}%;background:var(--yellow)"></div>
+            </div>
+            <div class="goal-nums">
+              <span style="color:var(--text)">parcela ${fmt(valorParcela)}</span>
+              <span>faltam ${fmt(faltamValor)}</span>
+            </div>
+            <div class="parcel-actions">
+              <button class="parcel-btn primary" onclick="advanceInstallment(${t.id})"${atual>=total?' disabled':''}>Avançar parcela</button>
+              <button class="parcel-btn" onclick="delTx(${t.id})">Remover</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="section-tag">Parcelas</div>
+
+        <div class="stat-grid" style="margin-top:4px">
+          <div class="stat-box">
+            <div class="stat-lbl">Peso no mês</div>
+            <div class="stat-val" style="color:var(--yellow)">${fmt(totalMensal)}</div>
+            <div class="stat-sub">${parcelas.length} ${parcelas.length===1?'compra ativa':'compras ativas'}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">Saldo parcelado</div>
+            <div class="stat-val">${fmt(totalFaltando)}</div>
+            <div class="stat-sub">faltando pagar</div>
+          </div>
+        </div>
+
+        ${cards}
+        <div style="height:92px"></div>`;
+    }
 
     function renderSaude(){
       const {exp}=totals();
@@ -1298,7 +1388,9 @@ function renderParcelas(){
       const dias=diasNoMes();
       const diaAtual_=diaAtual();
       const diasRestantes=dias-diaAtual_+1;
-      const gastoHoje=data.transactions.filter(t=>t.type==='expense'&&t.date===today()).reduce((s,t)=>s+t.amount,0);
+      const gastoHoje=data.transactions
+        .filter(t=>t.type==='expense'&&t.date===today())
+        .reduce((s,t)=>s+monthlyExpenseValue(t),0);
       const podeGastarDia=diasRestantes>0?Math.max(0,(limite-exp)/diasRestantes):0;
       const pctGasto=limite>0?Math.min(100,Math.round((exp/limite)*100)):0;
       const sobra=limite-exp;
@@ -1423,9 +1515,9 @@ function renderParcelas(){
     }
 
     function inferCategory(l){
-      if(/almoco|janta|jantar|lanche|cafe|caf[eé]zinho|restaurante|ifood|mercado|mercadinho|supermercado|padaria|burger|hamburg|pizza|acai/.test(l)) return 'alimentação';
-      if(/uber|99|busao|onibus|metro|metr[oô]|gasolina|gasosa|combustivel|estacionamento|transporte/.test(l)) return 'transporte';
-      if(/netflix|spotify|cinema|cineminha|jogo|game|festa|bar|rol[eê]|lazer|show/.test(l)) return 'lazer';
+      if(/almoco|janta|jantar|lanche|cafe|cafezinho|restaurante|ifood|mercado|mercadinho|supermercado|padaria|burger|hamburg|pizza|acai/.test(l)) return 'alimentação';
+      if(/uber|99|busao|onibus|metro|gasolina|gasosa|combustivel|estacionamento|transporte/.test(l)) return 'transporte';
+      if(/netflix|spotify|cinema|cineminha|jogo|game|festa|bar|role|lazer|show/.test(l)) return 'lazer';
       if(/farmacia|medico|dentista|academia|saude|remedio|hospital|consulta/.test(l)) return 'saúde';
       if(/aluguel|alugas|condominio|energia|luz|agua|internet|moradia|gas|conta de casa/.test(l)) return 'moradia';
       if(/curso|livro|escola|faculdade|facul|mensalidade|educacao/.test(l)) return 'educação';
@@ -1436,7 +1528,7 @@ function renderParcelas(){
     }
 
     function inferType(l){
-      return /recebi|ganhei|entrou|renda|salario|freela|freelance|trampei|cliente|job|pix que recebi|me pagaram|caiu/i.test(l)
+      return /recebi|ganhei|entrou|renda|salario|freela|freelance|trampei|cliente|job|pix que recebi|me pagaram|caiu/.test(l)
         ? 'income'
         : 'expense';
     }
@@ -1450,12 +1542,8 @@ function renderParcelas(){
       return parseFloat(m[1].replace(',','.'));
     }
 
-    function buildDescription(txt, installment){
-      let desc=txt.trim();
-      if(installment && !/parcela|x/i.test(desc.split(' ').slice(-4).join(' '))){
-        desc=`${desc} (${installment.count}x)`;
-      }
-      return desc.slice(0,48);
+    function buildDescription(txt){
+      return txt.trim().slice(0,48);
     }
 
     function parseTx(txt){
@@ -1468,18 +1556,16 @@ function renderParcelas(){
       const type=inferType(l);
 
       return{
-  id:Date.now(),
-  type,
-  amount,
-  category,
-  description:buildDescription(txt, installment),
-  date:detectDate(txt),
-  installments: installment ? installment.count : null,
-  installmentAmount: installment ? installment.amount : null,
-  installmentCurrent: installment ? 1 : null,
-  isInstallment: !!installment
-};
-
+        id:Date.now(),
+        type,
+        amount: installment ? installment.amount : amount,
+        category,
+        description:buildDescription(txt),
+        date:detectDate(txt),
+        installments: installment ? installment.count : null,
+        installmentAmount: installment ? installment.amount : null,
+        installmentCurrent: installment ? 1 : null,
+        isInstallment: !!installment
       };
     }
 
@@ -1489,7 +1575,8 @@ function renderParcelas(){
         const sinal = parsed.type === 'income' ? '+' : '-';
         const when = parsed.date === today() ? 'hoje' : 'na data informada';
         const parcelado = parsed.installments ? ` em ${parsed.installments}x` : '';
-        return `Entendi ${tipo} de ${sinal}${fmt(parsed.amount)}${parcelado} em ${parsed.category}, ${when}. Você pode confirmar nos botões ou responder "sim".`;
+        const valor = parsed.type === 'expense' ? monthlyExpenseValue(parsed) : parsed.amount;
+        return `Entendi ${tipo} de ${sinal}${fmt(valor)}${parcelado} em ${parsed.category}, ${when}. Você pode confirmar nos botões ou responder "sim".`;
       }
 
       if(/oi|olá|ola|bom dia|boa tarde|boa noite/i.test(txt)){
@@ -1512,7 +1599,7 @@ function renderParcelas(){
       const {exp,bal}=totals();
       const renda=data.renda||0;
       const limite=data.limiteGastos||0;
-      const expByCat=data.transactions.filter(t=>t.type==='expense').reduce((a,t)=>{a[t.category]=(a[t.category]||0)+t.amount;return a;},{});
+      const expByCat=data.transactions.filter(t=>t.type==='expense').reduce((a,t)=>{a[t.category]=(a[t.category]||0)+monthlyExpenseValue(t);return a;},{});
       const topCat=Object.entries(expByCat).sort((a,b)=>b[1]-a[1])[0];
       const dicas=[];
 
@@ -1555,9 +1642,10 @@ function renderParcelas(){
 
       if(pending && /^(sim|s|confirmar|confirma|ok|pode salvar|salvar|fecha)$/.test(lower)){
         msgs.push({r:'user',t:txt});
-        data.transactions.push(pending);
+        data.transactions.push({...pending});
         save();
-        msgs.push({r:'bot',t:`Perfeito. Registro salvo: ${pending.type==='income'?'+':'-'}${fmt(pending.amount)} em ${pending.category} ✅`});
+        const valor = pending.type==='expense' ? monthlyExpenseValue(pending) : pending.amount;
+        msgs.push({r:'bot',t:`Perfeito. Registro salvo: ${pending.type==='income'?'+':'-'}${fmt(valor)} em ${pending.category} ✅`});
         pending=null;
         updateHeader();
         render();
@@ -1594,7 +1682,7 @@ function renderParcelas(){
 
     function okTx(){
       if(!pending)return;
-      data.transactions.push(pending);
+      data.transactions.push({...pending});
       save();
       pending=null;
       updateHeader();
@@ -1609,6 +1697,28 @@ function renderParcelas(){
 
     function delTx(id){
       data.transactions=data.transactions.filter(t=>t.id!==id);
+      save();
+      updateHeader();
+      render();
+    }
+
+    function addMonthsToDate(isoDate, months){
+      const d=new Date(`${isoDate}T12:00:00`);
+      d.setMonth(d.getMonth()+months);
+      return d.toISOString().split('T')[0];
+    }
+
+    function advanceInstallment(id){
+      const tx=data.transactions.find(t=>t.id===id);
+      if(!tx || !tx.isInstallment) return;
+
+      const total=tx.installments||1;
+      const current=tx.installmentCurrent||1;
+
+      if(current>=total) return;
+
+      tx.installmentCurrent=current+1;
+      tx.date=addMonthsToDate(tx.date,1);
       save();
       updateHeader();
       render();
